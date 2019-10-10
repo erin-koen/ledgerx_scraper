@@ -1,12 +1,13 @@
 import os
 import lxml
 import json
+import twitter
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from twython import Twython
 
 
-def ledger_x_daily():
+def ledger_x_daily(request):
+
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     driver = webdriver.Chrome(options=options)
@@ -39,21 +40,26 @@ def ledger_x_daily():
     total_contracts = 0
     for trade in trades:
         total_contracts += trade['volume']
+
     most_traded = trades[0]
     contract = most_traded['contract']
     volume = most_traded['volume']
 
-    line_1 = f'{total_contracts} contracts traded on Ledger X today. \n'
-    line_2 = f'{contract} was the most active contract, trading {volume} times.'
+    line_1 = f'{total_contracts} contracts traded on @ledgerx today. \n'
+    line_2 = f'{contract} was the most active, with {volume} contracts trading.'
+    message = line_1 + line_2
+    print(message)
+    APP_KEY = os.environ.get('TWITTER_APP_KEY')
+    APP_SECRET = os.environ.get('TWITTER_APP_SECRET')
+    OAUTH_TOKEN = os.environ.get('OAUTH_TOKEN')
+    OAUTH_TOKEN_SECRET = os.environ.get('OAUTH_TOKEN_SECRET')
 
-    # twitter dets
-    # APP_KEY = os.environ.get(TWITTER_APP_KEY)
-    # APP_SECRET = os.environ.get(TWITTER_APP_SECRET)
-    # OAUTH_TOKEN = os.environ.get(OAUTH_TOKEN)
-    # OAUTH_TOKEN_SECRET = os.environ.get(OAUTH_TOKEN_SECRET)
-    # twitter = Twython(APP_KEY, APP_SECRET, OATUH_TOKEN, OAUTH_TOKEN_SECRET)
+    api = twitter.Api(consumer_key=APP_KEY,
+                      consumer_secret=APP_SECRET,
+                      access_token_key=OAUTH_TOKEN,
+                      access_token_secret=OAUTH_TOKEN_SECRET)
 
-    return line_1 + line_2
+    api.PostUpdates(message)
 
 
-print(ledger_x_daily())
+ledger_x_daily(1)

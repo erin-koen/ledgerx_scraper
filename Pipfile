@@ -11,7 +11,9 @@ autopep8 = "*"
 selenium = "*"
 bs4 = "*"
 lxml = "*"
-twython = "*"
+python-twitter = "*"
+requests = "*"
+requests-oauthlib = "*"
 
 [requires]
 python_version = "3.7"
