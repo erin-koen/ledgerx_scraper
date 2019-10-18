@@ -3,6 +3,9 @@ import lxml
 import json
 import twitter
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 
 
@@ -10,16 +13,27 @@ def ledger_x_daily(request):
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    driver = webdriver.Chrome(options=options)
+    caps = {'browserName': 'chrome'}
+    driver = webdriver.Chrome()
 
     # navigate to daily page
     driver.get(f'https://data.ledgerx.com/')
+    # print('driver initialized')
+    # try:
+    #     element = WebDriverWait(driver, 10).until(
+    #         EC.presence_of_element_located((By.CLASS_NAME, "App-table"))
+    #     )
+    # finally:
+    #     print('could not find the table')
+    #     driver.quit()
+    #     return
 
     # get the source
     source_overview = driver.page_source
 
     # make the soup
     soup = BeautifulSoup(source_overview, features="lxml")
+
     # get the table
     table = soup.find("table")
     # get an array of rows sans header and swaps
@@ -60,6 +74,7 @@ def ledger_x_daily(request):
                       access_token_secret=OAUTH_TOKEN_SECRET)
 
     api.PostUpdates(message)
+    return'Post Successful'
 
 
-ledger_x_daily(1)
+print(ledger_x_daily('t'))
