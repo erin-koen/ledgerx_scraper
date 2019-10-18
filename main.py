@@ -68,12 +68,12 @@ def ledger_x_daily(request):
     OAUTH_TOKEN = os.environ.get('OAUTH_TOKEN')
     OAUTH_TOKEN_SECRET = os.environ.get('OAUTH_TOKEN_SECRET')
 
-    api = twitter.Api(consumer_key=APP_KEY,
-                      consumer_secret=APP_SECRET,
-                      access_token_key=OAUTH_TOKEN,
-                      access_token_secret=OAUTH_TOKEN_SECRET)
+    # api = twitter.Api(consumer_key=APP_KEY,
+    #                   consumer_secret=APP_SECRET,
+    #                   access_token_key=OAUTH_TOKEN,
+    #                   access_token_secret=OAUTH_TOKEN_SECRET)
 
-    api.PostUpdates(message)
+    # api.PostUpdates(message)
     return'Post Successful'
 
 
