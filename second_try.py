@@ -1,20 +1,31 @@
+import os
 import requests
 import time
 import json
 import sqlite3
 from datetime import date
+import twitter
 
-# https://data.ledgerx.com/json/2019-10-17.json
+APP_KEY = os.environ.get('TWITTER_APP_KEY')
+APP_SECRET = os.environ.get('TWITTER_APP_SECRET')
+OAUTH_TOKEN = os.environ.get('OAUTH_TOKEN')
+OAUTH_TOKEN_SECRET = os.environ.get('OAUTH_TOKEN_SECRET')
 
-count = 0
+api = twitter.Api(consumer_key=APP_KEY,
+                  consumer_secret=APP_SECRET,
+                  access_token_key=OAUTH_TOKEN,
+                  access_token_secret=OAUTH_TOKEN_SECRET)
 
 
 def get_contracts():
-    today = '2019-10-17'
+    today = date.today()
     endpoint = f'https://data.ledgerx.com/json/{today}.json'
-    raw_data = requests.get(endpoint).json()
-    contracts = raw_data['report_data']
-    return contracts
+    response = requests.get(endpoint)
+    if response.status_code == 200:
+        contracts = response.json()['report_data']
+        return contracts
+    elif response.status_code == 404:
+        return 404
 
 
 def load_contracts_into_db(contracts, conn):
@@ -81,40 +92,52 @@ def pull_most_active_contracts_from_db(c):
             winners.append(
                 f'{contract[2]} Bitcoin {contract[3]} expiring {expiry}')
 
-    print(highest_volume, winners, total_volume)
+    return highest_volume, winners, total_volume
 
 
+def post_to_twitter(highest_volume, winners, total_volume):
+    # TODO: handle the case where there's more than one winner
+    length = len(winners)
+
+    most_message = f'The {winners[0]} was the most active contract  on today; {highest_volume} contracts traded. \n'
+    total_message = f'{total_volume} options contracts traded in total.'
+    message = most_message + '\n' + total_message
+    api.PostUpdates(message)
 
 
 def main():
     # initialize DB
+    print('Initializing database connection.')
     conn = sqlite3.connect('contracts.db',
                            detect_types=sqlite3.PARSE_DECLTYPES)
-    c = conn.cursor()
-    c.execute("DELETE FROM contracts")
-    # c.execute('''CREATE TABLE contracts
-    #                         (id integer primary key,
-    #                         date date,
-    #                         expiry date,
-    #                         strike text,
-    #                         contract_type text,
-    #                         option_type text,
-    #                         volume integer,
-    #                         vwap real)''')
 
+    # intialize cursor
+    c = conn.cursor()
+    c.execute('DELETE FROM contracts')
     # query ledgerx
+    print('Querying ledgerx.')
     contracts = get_contracts()
 
+    # handle 404
+    if contracts == 404:
+        return "The report has not yet been posted."
+
     # store contracts
+    print('Saving contracts to database.')
     load_contracts_into_db(contracts, conn)
 
     # pull the correct ones
-    pull_most_active_contracts_from_db(c)
-
-
+    print('Querying database for info.')
+    [highest_volume,
+     winners,
+     total_volume] = pull_most_active_contracts_from_db(c)
 
     # close db connection
+    print('Closing database connection.')
     conn.close()
+
+    print('Posting to Twitter.')
+    post_to_twitter(highest_volume, winners, total_volume)
 
 
 main()
